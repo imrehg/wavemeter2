@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <!-- We get the name of the app out of the information fetched -->
+    <title><%= app.name %></title>
+    <link rel="stylesheet" href="stylesheets/screen.css" media="screen">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script type="text/javascript">
+
+      // open a socket.io connection to the backend
+      var socket = io.connect();
+
+      socket.on('connect', function() {
+
+        // identify this socket with our auth token
+        socket.emit('auth', '<%= socket_id %>');
+
+      // when a status is received from the backend, add it to the page
+      socket.on('friends_status', function(data) {
+        var sex = data.sender.sex;
+        $('ul#'+sex).append(' \
+               <li> \
+                  <a href="" onclick="window.open(\'https://www.facebook.com/' + data.sender.uid + '\');"> \
+		    <img src="' + data.sender.pic_square + '" alt="' + data.sender.name + '"> \
+		    ' + data.sender.name + '\
+		  </a>\
+		  <div class="statustext" onclick="window.open(\'https://www.facebook.com/'+data.status.status_id+'\');">' + data.status.message +'</div> \
+               </li> \
+            '); 
+      });
+
+      socket.on('finished', function() {
+          $('#loading').hide();
+          spinner.stop();
+      });
+
+    });
+
+    </script>
+    <!--[if IE]>
+      <script>
+        var tags = ['header', 'section'];
+        while(tags.length)
+          document.createElement(tags.pop());
+      </script>
+    <![endif]-->
+  </head>
+  <body>
+    <section id="samples" class="clearfix">
+      <h1>Status updates</h1>
+
+      <div class="list" id="female">
+        <h3><img src="/images/Woman.png" style="position: relative; height: 40px; width: 18px;"></h3>
+        <ul id="female" class="status"></ul>
+      </div>
+
+      <div class="list" id="male">
+        <h3><img src="/images/Man.png" style="position: relative; height: 40px; width: 15px;"></h3>
+        <ul id="male" class="status"></ul>
+      </div>
+    </section>
+
+  </body>
+</html>
