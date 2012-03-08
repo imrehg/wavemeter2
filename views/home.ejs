@@ -16,14 +16,19 @@
       var socket = io.connect('/data');
 
       socket.on('connect', function() {
-        alert('yeah!');
+        $('#data').append('<b>connected</b><br>'); 
 
         // identify this socket with our auth token
         socket.emit('auth', '<%= socket_id %>');
 
       // when a status is received from the backend, add it to the page
-      socket.on('data', function(data) {
-        $('#data').append('XX<br>'); 
+      // socket.on('update', function(data) {
+      //   $('#data').append(data+'<br>'); 
+      // });
+
+      socket.on('update', function(data) {
+        console.log(data);
+        $('#data').prepend(data.wavelength+'<br>'); 
       });
 
     });

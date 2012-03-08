@@ -30,6 +30,7 @@ class WebSocket(object):
 
     def send(self, data):
         self._dispatcher.write('\x00' + _utf8(data) + '\xff')
+        # self._dispatcher.write( _utf8(data) + '\xff')
 
     def close(self):
         self._dispatcher.handle_close()
@@ -97,9 +98,11 @@ class _Dispatcher(asyncore.dispatcher):
             
         fields = [
             'Upgrade: WebSocket',
+            'Sec-WebSocket-Version: 8',
             'Connection: Upgrade',
             'Host: ' + hostport,
             'Origin: http://' + hostport,
+            'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==',
             #'Sec-WebSocket-Key1: %s' % WebSocket.generate_key(),
             #'Sec-WebSocket-Key2: %s' % WebSocket.generate_key()
         ]
@@ -151,6 +154,7 @@ class _Dispatcher(asyncore.dispatcher):
         self._write_buffer += data # TODO: separate buffer for handshake from data to
                                    # prevent mix-up when send() is called before
                                    # handshake is complete?
+        print "Send:", data
 
     def _read_until(self, delimiter, callback):
         self._read_buffer += self.recv(4096)
@@ -162,20 +166,25 @@ class _Dispatcher(asyncore.dispatcher):
                 callback(data)
 
     def _handle_frame(self, frame):
-        assert frame[-1] == '\xff'
-        if frame[0] != '\x00':
-            raise WebSocketError('WebSocket stream error')
+        # assert frame[-1] == '\xff'
+        # if frame[0] != '\x00':
+        #     raise WebSocketError('WebSocket stream error')
 
         if self.ws.onmessage:
             self.ws.onmessage(frame[1:-1])
         # TODO: else raise WebSocketError('No message handler defined')
 
     def _handle_header(self, header):
+        print header
         assert header[-4:] == '\r\n\r\n'
         start_line, fields = _parse_http_header(header)
-        if start_line != 'HTTP/1.1 101 Web Socket Protocol Handshake' or \
-           fields.get('Connection', None) != 'Upgrade' or \
-           fields.get('Upgrade', None) != 'WebSocket':
+        # if start_line != 'HTTP/1.1 101 Web Socket Protocol Handshake' or \
+        #    fields.get('Connection', None) != 'Upgrade' or \
+        #    fields.get('Upgrade', None) != 'WebSocket':
+        #     raise WebSocketError('Invalid server handshake')
+        if start_line != 'HTTP/1.1 101 Switching Protocols' or \
+           fields.get('Connection', None).lower() != 'upgrade' or \
+           fields.get('Upgrade', None).lower() != 'websocket':
             raise WebSocketError('Invalid server handshake')
 
         self._handshake_complete = True
